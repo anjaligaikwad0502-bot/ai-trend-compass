@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   Github, 
@@ -45,7 +46,12 @@ const difficultyColors = {
 };
 
 export function ContentCard({ item, index, isSaved, onToggleSave }: ContentCardProps) {
+  const navigate = useNavigate();
   const TypeIcon = typeIcons[item.content_type];
+
+  const handleCardClick = () => {
+    navigate(`/content/${item.id}`);
+  };
 
   return (
     <motion.article
@@ -53,6 +59,7 @@ export function ContentCard({ item, index, isSaved, onToggleSave }: ContentCardP
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -4 }}
+      onClick={handleCardClick}
       className="group glass rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:border-primary/30 glow-hover cursor-pointer"
     >
       {/* Header */}
