@@ -1,15 +1,31 @@
 import { motion } from 'framer-motion';
-import { Search, Bell, User, Sparkles } from 'lucide-react';
+import { Search, Bell, User, Sparkles, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  user?: SupabaseUser | null;
 }
 
-export function Header({ searchQuery, setSearchQuery }: HeaderProps) {
+export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success('Signed out successfully');
+    window.location.reload();
+  };
+
   return (
     <motion.header 
       initial={{ y: -20, opacity: 0 }}
@@ -56,11 +72,34 @@ export function Header({ searchQuery, setSearchQuery }: HeaderProps) {
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
           </Button>
           
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-4 h-4 text-primary-foreground" />
-            </div>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary-foreground">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="text-muted-foreground text-xs">
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <User className="w-4 h-4 text-primary-foreground" />
+              </div>
+            </Button>
+          )}
         </div>
       </div>
     </motion.header>

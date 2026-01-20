@@ -1,19 +1,52 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileFilters } from '@/components/layout/MobileFilters';
 import { HeroSection } from '@/components/home/HeroSection';
 import { ContentFeed } from '@/components/content/ContentFeed';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { ThemeProvider } from '@/lib/theme';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [showHero, setShowHero] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    // Set up auth state listener BEFORE checking session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleExplore = () => {
+    if (user) {
+      // User is authenticated, show feed
+      setShowHero(false);
+      setTimeout(() => {
+        feedRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      // User not authenticated, show auth modal
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
     setShowHero(false);
     setTimeout(() => {
       feedRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,7 +55,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} user={user} />
       
       {showHero ? (
         <HeroSection onExplore={handleExplore} />
@@ -43,6 +76,12 @@ function AppContent() {
           </div>
         </div>
       )}
+
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
