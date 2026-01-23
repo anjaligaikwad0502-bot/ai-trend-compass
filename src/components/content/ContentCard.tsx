@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Sparkles
 } from 'lucide-react';
-import { ContentItem } from '@/lib/mockData';
+import { ContentItem } from '@/lib/api/content';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

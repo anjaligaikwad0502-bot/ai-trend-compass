@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentCard } from './ContentCard';
-import { mockContent, ContentItem } from '@/lib/mockData';
-import { cn } from '@/lib/utils';
+import { contentApi, ContentItem } from '@/lib/api/content';
+import { Loader2 } from 'lucide-react';
 
 interface ContentFeedProps {
   activeFilter: string;
@@ -11,14 +11,49 @@ interface ContentFeedProps {
 
 export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
   const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
+  const [content, setContent] = useState<ContentItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        let data: ContentItem[] = [];
+        
+        if (activeFilter === 'all' || activeFilter === 'trending') {
+          data = await contentApi.fetchAllContent();
+        } else if (activeFilter === 'article') {
+          data = await contentApi.fetchArticles();
+        } else if (activeFilter === 'repo') {
+          data = await contentApi.fetchRepos();
+        } else if (activeFilter === 'paper') {
+          data = await contentApi.fetchPapers();
+        } else if (activeFilter === 'video') {
+          data = await contentApi.fetchVideos();
+        } else if (activeFilter === 'saved') {
+          // For saved, we need to fetch all and filter
+          data = await contentApi.fetchAllContent();
+        }
+        
+        setContent(data);
+      } catch (err) {
+        console.error('Error fetching content:', err);
+        setError('Failed to load content. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (activeFilter !== 'analytics') {
+      fetchContent();
+    }
+  }, [activeFilter]);
 
   const filteredContent = useMemo(() => {
-    let items = mockContent;
-
-    // Filter by content type
-    if (activeFilter !== 'all' && activeFilter !== 'saved' && activeFilter !== 'trending' && activeFilter !== 'analytics') {
-      items = items.filter(item => item.content_type === activeFilter);
-    }
+    let items = content;
 
     // Filter saved items
     if (activeFilter === 'saved') {
@@ -41,7 +76,7 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
     }
 
     return items;
-  }, [activeFilter, searchQuery, savedItems]);
+  }, [content, activeFilter, searchQuery, savedItems]);
 
   const toggleSave = (id: string) => {
     setSavedItems(prev => {
@@ -56,7 +91,28 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
   };
 
   if (activeFilter === 'analytics') {
-    return null; // Will be handled by parent
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading fresh content...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <span className="text-3xl">⚠️</span>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto">{error}</p>
+      </div>
+    );
   }
 
   return (
