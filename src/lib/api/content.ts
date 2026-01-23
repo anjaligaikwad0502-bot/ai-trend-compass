@@ -1,0 +1,134 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export interface ContentItem {
+  id: string;
+  title: string;
+  content_type: 'article' | 'repo' | 'paper' | 'video';
+  summary: string;
+  key_insights: string[];
+  tags: string[];
+  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  estimated_read_time: string;
+  engagement_score: number;
+  source: string;
+  author: string;
+  published_at: string;
+  url: string;
+  image?: string;
+  stars?: number;
+  forks?: number;
+  language?: string;
+  thumbnail?: string;
+  video_id?: string;
+  arxiv_id?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export const contentApi = {
+  async fetchArticles(): Promise<ContentItem[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-articles');
+      
+      if (error) {
+        console.error('Error fetching articles:', error);
+        return [];
+      }
+      
+      return data?.data || [];
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      return [];
+    }
+  },
+
+  async fetchRepos(query?: string): Promise<ContentItem[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-repos', {
+        body: { query: query || 'artificial intelligence machine learning' }
+      });
+      
+      if (error) {
+        console.error('Error fetching repos:', error);
+        return [];
+      }
+      
+      return data?.data || [];
+    } catch (error) {
+      console.error('Error fetching repos:', error);
+      return [];
+    }
+  },
+
+  async fetchPapers(category?: string): Promise<ContentItem[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-papers', {
+        body: { category: category || 'cs.AI' }
+      });
+      
+      if (error) {
+        console.error('Error fetching papers:', error);
+        return [];
+      }
+      
+      return data?.data || [];
+    } catch (error) {
+      console.error('Error fetching papers:', error);
+      return [];
+    }
+  },
+
+  async fetchVideos(query?: string): Promise<ContentItem[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-videos', {
+        body: { query: query || 'artificial intelligence tutorial' }
+      });
+      
+      if (error) {
+        console.error('Error fetching videos:', error);
+        return [];
+      }
+      
+      return data?.data || [];
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      return [];
+    }
+  },
+
+  async fetchAllContent(): Promise<ContentItem[]> {
+    try {
+      const [articles, repos, papers, videos] = await Promise.all([
+        this.fetchArticles(),
+        this.fetchRepos(),
+        this.fetchPapers(),
+        this.fetchVideos()
+      ]);
+
+      return [...articles, ...repos, ...papers, ...videos]
+        .sort((a, b) => b.engagement_score - a.engagement_score);
+    } catch (error) {
+      console.error('Error fetching all content:', error);
+      return [];
+    }
+  },
+
+  async fetchByType(type: 'article' | 'repo' | 'paper' | 'video'): Promise<ContentItem[]> {
+    switch (type) {
+      case 'article':
+        return this.fetchArticles();
+      case 'repo':
+        return this.fetchRepos();
+      case 'paper':
+        return this.fetchPapers();
+      case 'video':
+        return this.fetchVideos();
+      default:
+        return [];
+    }
+  }
+};

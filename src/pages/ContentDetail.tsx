@@ -15,11 +15,12 @@ import {
   BookmarkCheck,
   Share2,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockContent, ContentItem } from '@/lib/mockData';
+import { contentApi, ContentItem } from '@/lib/api/content';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/lib/theme';
 import { Header } from '@/components/layout/Header';
@@ -51,13 +52,57 @@ function ContentDetailPage() {
   const [item, setItem] = useState<ContentItem | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const content = mockContent.find(c => c.id === id);
-    if (content) {
-      setItem(content);
-    }
+    const fetchItem = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        // Determine content type from ID prefix
+        let contentType: 'article' | 'repo' | 'paper' | 'video' | null = null;
+        if (id.startsWith('devto-') || id.startsWith('hn-')) {
+          contentType = 'article';
+        } else if (id.startsWith('gh-')) {
+          contentType = 'repo';
+        } else if (id.startsWith('arxiv-')) {
+          contentType = 'paper';
+        } else if (id.startsWith('yt-')) {
+          contentType = 'video';
+        }
+
+        if (contentType) {
+          const items = await contentApi.fetchByType(contentType);
+          const foundItem = items.find(c => c.id === id);
+          setItem(foundItem || null);
+        } else {
+          // Fallback: fetch all and search
+          const allContent = await contentApi.fetchAllContent();
+          const foundItem = allContent.find(c => c.id === id);
+          setItem(foundItem || null);
+        }
+      } catch (error) {
+        console.error('Error fetching content:', error);
+        setItem(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItem();
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading content...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
@@ -153,6 +198,16 @@ function ContentDetailPage() {
               <Share2 className="w-4 h-4" />
               Share
             </Button>
+            {item.url && (
+              <Button 
+                variant="outline" 
+                onClick={() => window.open(item.url, '_blank')} 
+                className="gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Source
+              </Button>
+            )}
             <div className="flex-1" />
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
@@ -190,23 +245,22 @@ function ContentDetailPage() {
           </motion.div>
         )}
 
-        {/* Video Player Placeholder */}
-        {item.content_type === 'video' && (
+        {/* Video Player */}
+        {item.content_type === 'video' && item.video_id && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="glass rounded-2xl p-6 mb-6"
           >
-            <div className="aspect-video bg-muted rounded-xl flex items-center justify-center border border-border">
-              <div className="text-center">
-                <Video className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Video player would be embedded here</p>
-                <Button variant="outline" className="mt-4 gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Watch Video
-                </Button>
-              </div>
+            <div className="aspect-video rounded-xl overflow-hidden">
+              <iframe
+                src={`https://www.youtube.com/embed/${item.video_id}`}
+                title={item.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
             </div>
           </motion.div>
         )}
