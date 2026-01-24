@@ -54,9 +54,9 @@ export function HeroSection({ onExplore }: HeroSectionProps) {
           transition={{ delay: 0.1 }}
           className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-tight"
         >
-          Your AI-Powered
+          Your Personal
           <br />
-          <span className="gradient-text">Tech Feed</span>
+          <span className="gradient-text">Tech Radar</span>
         </motion.h1>
 
         {/* Description */}
