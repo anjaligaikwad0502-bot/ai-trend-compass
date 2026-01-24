@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, Bell, User, Sparkles, LogOut } from 'lucide-react';
+import { Search, User, Sparkles, LogOut } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
   searchQuery: string;
@@ -20,6 +22,18 @@ interface HeaderProps {
 }
 
 export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+  } = useNotifications({
+    enabled: true,
+    pollInterval: 60000, // Check every minute
+    userInterests: [], // TODO: Get from user preferences
+  });
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast.success('Signed out successfully');
@@ -55,7 +69,7 @@ export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search trending content..."
+              placeholder="Search with AI (synonyms, related topics)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-secondary/30 border-border/50 focus:border-primary/50 transition-all"
@@ -67,10 +81,13 @@ export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-          </Button>
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onClearAll={clearAll}
+          />
           
           {user ? (
             <DropdownMenu>

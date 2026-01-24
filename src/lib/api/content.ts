@@ -23,6 +23,17 @@ export interface ContentItem {
   arxiv_id?: string;
 }
 
+export interface SemanticSearchResult {
+  items: ContentItem[];
+  expandedQuery: {
+    original: string;
+    synonyms: string[];
+    relatedTopics: string[];
+    intent: string;
+  };
+  hasExactMatches: boolean;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -130,5 +141,53 @@ export const contentApi = {
       default:
         return [];
     }
+  },
+
+  async semanticSearch(query: string, content: ContentItem[]): Promise<SemanticSearchResult> {
+    try {
+      const { data, error } = await supabase.functions.invoke('semantic-search', {
+        body: { query, content }
+      });
+      
+      if (error) {
+        console.error('Error in semantic search:', error);
+        // Fallback to basic search
+        return this.basicSearch(query, content);
+      }
+      
+      return data?.data || this.basicSearch(query, content);
+    } catch (error) {
+      console.error('Error in semantic search:', error);
+      return this.basicSearch(query, content);
+    }
+  },
+
+  basicSearch(query: string, content: ContentItem[]): SemanticSearchResult {
+    const queryLower = query.toLowerCase();
+    
+    const matched = content.filter(item => {
+      const titleLower = item.title.toLowerCase();
+      const summaryLower = item.summary.toLowerCase();
+      const tagsLower = item.tags.map(t => t.toLowerCase());
+      
+      return titleLower.includes(queryLower) ||
+             summaryLower.includes(queryLower) ||
+             tagsLower.some(tag => tag.includes(queryLower));
+    });
+
+    // If no matches, return trending content
+    const results = matched.length > 0 ? matched : 
+      content.sort((a, b) => b.engagement_score - a.engagement_score).slice(0, 15);
+
+    return {
+      items: results,
+      expandedQuery: {
+        original: query,
+        synonyms: [],
+        relatedTopics: [],
+        intent: 'Basic search'
+      },
+      hasExactMatches: matched.length > 0
+    };
   }
 };
