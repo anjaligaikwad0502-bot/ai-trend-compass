@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentCard } from './ContentCard';
-import { contentApi, ContentItem } from '@/lib/api/content';
-import { Loader2 } from 'lucide-react';
+import { contentApi, ContentItem, SemanticSearchResult } from '@/lib/api/content';
+import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface ContentFeedProps {
   activeFilter: string;
@@ -12,13 +14,19 @@ interface ContentFeedProps {
 export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
   const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
   const [content, setContent] = useState<ContentItem[]>([]);
+  const [searchResult, setSearchResult] = useState<SemanticSearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Fetch content based on filter
   useEffect(() => {
     const fetchContent = async () => {
       setIsLoading(true);
       setError(null);
+      setSearchResult(null);
       
       try {
         let data: ContentItem[] = [];
@@ -34,7 +42,6 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
         } else if (activeFilter === 'video') {
           data = await contentApi.fetchVideos();
         } else if (activeFilter === 'saved') {
-          // For saved, we need to fetch all and filter
           data = await contentApi.fetchAllContent();
         }
         
@@ -52,7 +59,45 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
     }
   }, [activeFilter]);
 
+  // Perform semantic search when query changes
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!debouncedSearchQuery || debouncedSearchQuery.trim().length < 2) {
+        setSearchResult(null);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const result = await contentApi.semanticSearch(debouncedSearchQuery, content);
+        setSearchResult(result);
+      } catch (err) {
+        console.error('Search error:', err);
+        // Fallback to basic search on error
+        setSearchResult(contentApi.basicSearch(debouncedSearchQuery, content));
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    if (content.length > 0) {
+      performSearch();
+    }
+  }, [debouncedSearchQuery, content]);
+
   const filteredContent = useMemo(() => {
+    // If we have a semantic search result, use it
+    if (searchResult && debouncedSearchQuery) {
+      let items = searchResult.items;
+      
+      // Filter saved items if on saved tab
+      if (activeFilter === 'saved') {
+        items = items.filter(item => savedItems.has(item.id));
+      }
+      
+      return items;
+    }
+
     let items = content;
 
     // Filter saved items
@@ -65,20 +110,10 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
       items = [...items].sort((a, b) => b.engagement_score - a.engagement_score);
     }
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      items = items.filter(item => 
-        item.title.toLowerCase().includes(query) ||
-        item.summary.toLowerCase().includes(query) ||
-        item.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
     return items;
-  }, [content, activeFilter, searchQuery, savedItems]);
+  }, [content, searchResult, debouncedSearchQuery, activeFilter, savedItems]);
 
-  const toggleSave = (id: string) => {
+  const toggleSave = useCallback((id: string) => {
     setSavedItems(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -88,7 +123,7 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
       }
       return next;
     });
-  };
+  }, []);
 
   if (activeFilter === 'analytics') {
     return null;
@@ -117,10 +152,59 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
 
   return (
     <div className="space-y-4">
+      {/* Semantic search info */}
+      {searchResult && debouncedSearchQuery && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl bg-primary/5 border border-primary/20"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-medium">AI-Powered Search</span>
+                {isSearching && <Loader2 className="h-3 w-3 animate-spin" />}
+              </div>
+              <p className="text-xs text-muted-foreground mb-2">
+                {searchResult.expandedQuery.intent}
+              </p>
+              
+              {/* Show expanded terms */}
+              <div className="flex flex-wrap gap-1.5">
+                {searchResult.expandedQuery.synonyms.slice(0, 3).map((term, i) => (
+                  <Badge key={`syn-${i}`} variant="secondary" className="text-xs">
+                    {term}
+                  </Badge>
+                ))}
+                {searchResult.expandedQuery.relatedTopics.slice(0, 3).map((topic, i) => (
+                  <Badge key={`topic-${i}`} variant="outline" className="text-xs">
+                    {topic}
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Show if showing related content instead of exact matches */}
+              {!searchResult.hasExactMatches && searchResult.items.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                  <TrendingUp className="h-3 w-3" />
+                  <span>Showing related content based on your search</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Results count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing <span className="font-medium text-foreground">{filteredContent.length}</span> results
+          {searchResult && debouncedSearchQuery && !searchResult.hasExactMatches && filteredContent.length > 0 && (
+            <span className="ml-1">(related content)</span>
+          )}
         </p>
       </div>
 
