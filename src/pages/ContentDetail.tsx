@@ -136,7 +136,7 @@ function ContentDetailPage() {
         >
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/', { state: { fromFeed: true } })}
             className="gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
