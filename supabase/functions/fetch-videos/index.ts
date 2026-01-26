@@ -47,6 +47,16 @@ Deno.serve(async (req) => {
     if (!searchResponse.ok) {
       const errorText = await searchResponse.text();
       console.error('YouTube API error:', errorText);
+      
+      // Check if it's a quota error - return empty array gracefully instead of failing
+      if (searchResponse.status === 403 && errorText.includes('quotaExceeded')) {
+        console.log('YouTube API quota exceeded, returning empty results');
+        return new Response(
+          JSON.stringify({ success: true, data: [], quotaExceeded: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to fetch videos' }),
         { status: searchResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
