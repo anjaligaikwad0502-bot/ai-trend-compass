@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileFilters } from '@/components/layout/MobileFilters';
@@ -11,9 +12,12 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 function AppContent() {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [showHero, setShowHero] = useState(true);
+  // Check if coming back from content detail (state.fromFeed) or URL has ?feed=true
+  const shouldShowFeed = location.state?.fromFeed || new URLSearchParams(location.search).get('feed') === 'true';
+  const [showHero, setShowHero] = useState(!shouldShowFeed);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
