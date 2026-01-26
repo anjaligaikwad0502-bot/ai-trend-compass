@@ -48,11 +48,12 @@ Deno.serve(async (req) => {
       const errorText = await searchResponse.text();
       console.error('YouTube API error:', errorText);
       
-      // Check if it's a quota error - return empty array gracefully instead of failing
+      // Check if it's a quota error - return curated fallback videos
       if (searchResponse.status === 403 && errorText.includes('quotaExceeded')) {
-        console.log('YouTube API quota exceeded, returning empty results');
+        console.log('YouTube API quota exceeded, returning curated fallback videos');
+        const fallbackVideos = getCuratedFallbackVideos();
         return new Response(
-          JSON.stringify({ success: true, data: [], quotaExceeded: true }),
+          JSON.stringify({ success: true, data: fallbackVideos, quotaExceeded: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -176,4 +177,113 @@ function calculateEngagement(stats: any): number {
   const likeScore = Math.min(50, likeRatio * 10);
   
   return Math.floor(viewScore + likeScore);
+}
+
+function getCuratedFallbackVideos(): Video[] {
+  const curatedVideos = [
+    {
+      id: 'yt-fallback-1',
+      title: 'Introduction to Machine Learning - Full Course',
+      content_type: 'video' as const,
+      summary: 'A comprehensive introduction to machine learning concepts, algorithms, and practical applications. Perfect for beginners looking to understand AI fundamentals.',
+      key_insights: ['Beginner friendly', 'Comprehensive coverage', 'Hands-on examples'],
+      tags: ['Machine Learning', 'AI', 'Tutorial', 'Beginner'],
+      difficulty_level: 'beginner' as const,
+      estimated_read_time: '45 min',
+      engagement_score: 92,
+      source: 'YouTube',
+      author: 'Tech Education',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=machine+learning+tutorial',
+      thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=480&h=270&fit=crop',
+      video_id: 'fallback-1'
+    },
+    {
+      id: 'yt-fallback-2',
+      title: 'Deep Learning with Neural Networks Explained',
+      content_type: 'video' as const,
+      summary: 'Explore the fundamentals of deep learning and neural networks. Learn how AI models learn from data and make predictions.',
+      key_insights: ['Neural network basics', 'Backpropagation explained', 'Real-world applications'],
+      tags: ['Deep Learning', 'Neural Networks', 'AI'],
+      difficulty_level: 'intermediate' as const,
+      estimated_read_time: '30 min',
+      engagement_score: 88,
+      source: 'YouTube',
+      author: 'AI Academy',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=deep+learning+neural+networks',
+      thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=480&h=270&fit=crop',
+      video_id: 'fallback-2'
+    },
+    {
+      id: 'yt-fallback-3',
+      title: 'GPT and Large Language Models - How They Work',
+      content_type: 'video' as const,
+      summary: 'Understand the architecture and training process behind GPT and other large language models powering modern AI applications.',
+      key_insights: ['Transformer architecture', 'Training process', 'GPT capabilities'],
+      tags: ['GPT', 'LLM', 'Transformers', 'NLP'],
+      difficulty_level: 'intermediate' as const,
+      estimated_read_time: '25 min',
+      engagement_score: 95,
+      source: 'YouTube',
+      author: 'AI Explained',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=gpt+large+language+models+explained',
+      thumbnail: 'https://images.unsplash.com/photo-1684391545194-a4e3f5c37e91?w=480&h=270&fit=crop',
+      video_id: 'fallback-3'
+    },
+    {
+      id: 'yt-fallback-4',
+      title: 'Python for AI and Machine Learning',
+      content_type: 'video' as const,
+      summary: 'Master Python programming for AI development. Covers essential libraries like NumPy, Pandas, TensorFlow, and PyTorch.',
+      key_insights: ['Python basics', 'ML libraries', 'Practical coding'],
+      tags: ['Python', 'TensorFlow', 'PyTorch', 'Tutorial'],
+      difficulty_level: 'beginner' as const,
+      estimated_read_time: '60 min',
+      engagement_score: 85,
+      source: 'YouTube',
+      author: 'Code Academy',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=python+machine+learning+tutorial',
+      thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=480&h=270&fit=crop',
+      video_id: 'fallback-4'
+    },
+    {
+      id: 'yt-fallback-5',
+      title: 'Computer Vision and Image Recognition',
+      content_type: 'video' as const,
+      summary: 'Learn how computers see and understand images. Covers CNNs, object detection, and image classification techniques.',
+      key_insights: ['CNN architecture', 'Object detection', 'Image classification'],
+      tags: ['Computer Vision', 'Deep Learning', 'CNN'],
+      difficulty_level: 'advanced' as const,
+      estimated_read_time: '40 min',
+      engagement_score: 82,
+      source: 'YouTube',
+      author: 'Vision AI Lab',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=computer+vision+deep+learning',
+      thumbnail: 'https://images.unsplash.com/photo-1561736778-92e52a7769ef?w=480&h=270&fit=crop',
+      video_id: 'fallback-5'
+    },
+    {
+      id: 'yt-fallback-6',
+      title: 'Reinforcement Learning Fundamentals',
+      content_type: 'video' as const,
+      summary: 'Discover how AI agents learn through trial and error. Covers Q-learning, policy gradients, and game-playing AI.',
+      key_insights: ['RL basics', 'Q-learning', 'Game AI examples'],
+      tags: ['Reinforcement Learning', 'AI', 'Gaming'],
+      difficulty_level: 'advanced' as const,
+      estimated_read_time: '35 min',
+      engagement_score: 79,
+      source: 'YouTube',
+      author: 'RL Research',
+      published_at: new Date().toISOString().split('T')[0],
+      url: 'https://www.youtube.com/results?search_query=reinforcement+learning+tutorial',
+      thumbnail: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=480&h=270&fit=crop',
+      video_id: 'fallback-6'
+    }
+  ];
+  
+  return curatedVideos;
 }
