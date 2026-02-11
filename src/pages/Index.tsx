@@ -7,8 +7,10 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { ContentFeed } from '@/components/content/ContentFeed';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { AIAssistant } from '@/components/ai/AIAssistant';
 import { ThemeProvider } from '@/lib/theme';
 import { supabase } from '@/integrations/supabase/client';
+import { contentApi } from '@/lib/api/content';
 import type { User } from '@supabase/supabase-js';
 
 function AppContent() {
@@ -21,6 +23,35 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+  const [platformContext, setPlatformContext] = useState<{
+    contentSummary: string;
+    trendingTags: string[];
+    contentTypes: string;
+    totalItems: number;
+  }>({ contentSummary: '', trendingTags: [], contentTypes: 'Articles, GitHub Repos, Research Papers, Videos', totalItems: 0 });
+
+  // Fetch platform context for AI assistant
+  useEffect(() => {
+    if (showHero) return;
+    const loadContext = async () => {
+      try {
+        const items = await contentApi.fetchAllContent();
+        const tags = new Map<string, number>();
+        items.forEach(item => item.tags?.forEach(t => tags.set(t, (tags.get(t) || 0) + 1)));
+        const topTags = [...tags.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([t]) => t);
+        const summary = items.slice(0, 10).map(i => `- [${i.content_type}] "${i.title}" by ${i.author}`).join('\n');
+        setPlatformContext({
+          contentSummary: summary,
+          trendingTags: topTags,
+          contentTypes: 'Articles, GitHub Repos, Research Papers, Videos',
+          totalItems: items.length,
+        });
+      } catch (e) {
+        console.error('Failed to load platform context:', e);
+      }
+    };
+    loadContext();
+  }, [showHero]);
 
   useEffect(() => {
     // Set up auth state listener BEFORE checking session
@@ -86,6 +117,8 @@ function AppContent() {
         onClose={() => setShowAuthModal(false)} 
         onSuccess={handleAuthSuccess}
       />
+
+      {!showHero && <AIAssistant platformContext={platformContext} />}
     </div>
   );
 }
