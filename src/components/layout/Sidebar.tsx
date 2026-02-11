@@ -4,6 +4,7 @@ import {
   Github, 
   GraduationCap, 
   Video, 
+  Wrench,
   Bookmark, 
   TrendingUp,
   BarChart3,
@@ -22,6 +23,7 @@ const filters = [
   { id: 'repo', label: 'Repositories', icon: Github, color: 'text-green-500' },
   { id: 'paper', label: 'Papers', icon: GraduationCap, color: 'text-purple-500' },
   { id: 'video', label: 'Videos', icon: Video, color: 'text-red-500' },
+  { id: 'tool', label: 'Tools', icon: Wrench, color: 'text-orange-500' },
 ];
 
 const extras = [
@@ -111,8 +113,8 @@ export function Sidebar({ activeFilter, setActiveFilter }: SidebarProps) {
               <Zap className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground">AI Agents Active</p>
-              <p className="text-lg font-bold text-foreground">4 / 4</p>
+            <p className="text-xs font-medium text-muted-foreground">AI Agents Active</p>
+              <p className="text-lg font-bold text-foreground">5 / 5</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -130,6 +132,10 @@ export function Sidebar({ activeFilter, setActiveFilter }: SidebarProps) {
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Notifier</span>
+              <span className="text-green-500">● Active</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Tool Tracker</span>
               <span className="text-green-500">● Active</span>
             </div>
           </div>

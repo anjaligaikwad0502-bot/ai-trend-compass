@@ -7,6 +7,7 @@ import {
   Github, 
   GraduationCap, 
   Video,
+  Wrench,
   Star,
   GitFork,
   Clock,
@@ -31,6 +32,7 @@ const typeIcons = {
   repo: Github,
   paper: GraduationCap,
   video: Video,
+  tool: Wrench,
 };
 
 const typeColors = {
@@ -38,6 +40,7 @@ const typeColors = {
   repo: { bg: 'bg-green-500/10', text: 'text-green-500', border: 'border-green-500/20' },
   paper: { bg: 'bg-purple-500/10', text: 'text-purple-500', border: 'border-purple-500/20' },
   video: { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/20' },
+  tool: { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' },
 };
 
 const difficultyColors = {
@@ -61,7 +64,7 @@ function ContentDetailPage() {
       setIsLoading(true);
       try {
         // Determine content type from ID prefix
-        let contentType: 'article' | 'repo' | 'paper' | 'video' | null = null;
+        let contentType: 'article' | 'repo' | 'paper' | 'video' | 'tool' | null = null;
         if (id.startsWith('devto-') || id.startsWith('hn-')) {
           contentType = 'article';
         } else if (id.startsWith('gh-')) {
@@ -70,6 +73,8 @@ function ContentDetailPage() {
           contentType = 'paper';
         } else if (id.startsWith('yt-')) {
           contentType = 'video';
+        } else if (id.startsWith('tool-')) {
+          contentType = 'tool';
         }
 
         if (contentType) {
@@ -314,6 +319,7 @@ function ContentDetailPage() {
             {item.content_type === 'repo' && 'README Preview'}
             {item.content_type === 'paper' && 'Paper Abstract'}
             {item.content_type === 'video' && 'Video Transcript'}
+            {item.content_type === 'tool' && 'Tool Overview'}
           </h3>
           <div className="prose prose-invert max-w-none">
             <p className="text-muted-foreground leading-relaxed">

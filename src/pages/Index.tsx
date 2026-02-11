@@ -28,7 +28,7 @@ function AppContent() {
     trendingTags: string[];
     contentTypes: string;
     totalItems: number;
-  }>({ contentSummary: '', trendingTags: [], contentTypes: 'Articles, GitHub Repos, Research Papers, Videos', totalItems: 0 });
+  }>({ contentSummary: '', trendingTags: [], contentTypes: 'Articles, GitHub Repos, Research Papers, Videos, AI Tools', totalItems: 0 });
 
   // Fetch platform context for AI assistant
   useEffect(() => {

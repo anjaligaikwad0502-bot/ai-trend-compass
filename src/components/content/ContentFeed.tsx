@@ -41,6 +41,8 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
           data = await contentApi.fetchPapers();
         } else if (activeFilter === 'video') {
           data = await contentApi.fetchVideos();
+        } else if (activeFilter === 'tool') {
+          data = await contentApi.fetchTools();
         } else if (activeFilter === 'saved') {
           data = await contentApi.fetchAllContent();
         }
