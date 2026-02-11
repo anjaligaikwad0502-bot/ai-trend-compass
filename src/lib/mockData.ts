@@ -1,7 +1,7 @@
 export interface ContentItem {
   id: string;
   title: string;
-  content_type: 'article' | 'repo' | 'paper' | 'video';
+  content_type: 'article' | 'repo' | 'paper' | 'video' | 'tool';
   summary: string;
   key_insights: string[];
   tags: string[];

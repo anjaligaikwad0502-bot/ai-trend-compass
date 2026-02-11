@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.ai-assistant]
 verify_jwt = false
+
+[functions.fetch-tools]
+verify_jwt = false

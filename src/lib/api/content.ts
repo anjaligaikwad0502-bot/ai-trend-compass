@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ContentItem {
   id: string;
   title: string;
-  content_type: 'article' | 'repo' | 'paper' | 'video';
+  content_type: 'article' | 'repo' | 'paper' | 'video' | 'tool';
   summary: string;
   key_insights: string[];
   tags: string[];
@@ -21,6 +21,8 @@ export interface ContentItem {
   thumbnail?: string;
   video_id?: string;
   arxiv_id?: string;
+  tool_category?: string;
+  pricing?: string;
 }
 
 export interface SemanticSearchResult {
@@ -111,16 +113,33 @@ export const contentApi = {
     }
   },
 
+  async fetchTools(): Promise<ContentItem[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-tools');
+      
+      if (error) {
+        console.error('Error fetching tools:', error);
+        return [];
+      }
+      
+      return data?.data || [];
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+      return [];
+    }
+  },
+
   async fetchAllContent(): Promise<ContentItem[]> {
     try {
-      const [articles, repos, papers, videos] = await Promise.all([
+      const [articles, repos, papers, videos, tools] = await Promise.all([
         this.fetchArticles(),
         this.fetchRepos(),
         this.fetchPapers(),
-        this.fetchVideos()
+        this.fetchVideos(),
+        this.fetchTools()
       ]);
 
-      return [...articles, ...repos, ...papers, ...videos]
+      return [...articles, ...repos, ...papers, ...videos, ...tools]
         .sort((a, b) => b.engagement_score - a.engagement_score);
     } catch (error) {
       console.error('Error fetching all content:', error);
@@ -128,7 +147,7 @@ export const contentApi = {
     }
   },
 
-  async fetchByType(type: 'article' | 'repo' | 'paper' | 'video'): Promise<ContentItem[]> {
+  async fetchByType(type: 'article' | 'repo' | 'paper' | 'video' | 'tool'): Promise<ContentItem[]> {
     switch (type) {
       case 'article':
         return this.fetchArticles();
@@ -138,6 +157,8 @@ export const contentApi = {
         return this.fetchPapers();
       case 'video':
         return this.fetchVideos();
+      case 'tool':
+        return this.fetchTools();
       default:
         return [];
     }

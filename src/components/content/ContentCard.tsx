@@ -5,6 +5,7 @@ import {
   Github, 
   GraduationCap, 
   Video, 
+  Wrench,
   Bookmark, 
   BookmarkCheck,
   Star,
@@ -30,6 +31,7 @@ const typeIcons = {
   repo: Github,
   paper: GraduationCap,
   video: Video,
+  tool: Wrench,
 };
 
 const typeColors = {
@@ -37,6 +39,7 @@ const typeColors = {
   repo: 'bg-green-500/10 text-green-500 border-green-500/20',
   paper: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
   video: 'bg-red-500/10 text-red-500 border-red-500/20',
+  tool: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
 };
 
 const difficultyColors = {
