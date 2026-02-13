@@ -4,6 +4,7 @@ import {
   Github, 
   GraduationCap, 
   Video,
+  Wrench,
   ArrowRight,
   Sparkles,
   Zap
@@ -20,6 +21,7 @@ const contentTypes = [
   { icon: Github, label: 'Repos', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border border-emerald-500/20' },
   { icon: GraduationCap, label: 'Papers', color: 'text-violet-400', bg: 'bg-violet-500/10 border border-violet-500/20' },
   { icon: Video, label: 'Videos', color: 'text-rose-400', bg: 'bg-rose-500/10 border border-rose-500/20' },
+  { icon: Wrench, label: 'Tools', color: 'text-orange-400', bg: 'bg-orange-500/10 border border-orange-500/20' },
 ];
 
 export function HeroSection({ onExplore }: HeroSectionProps) {
