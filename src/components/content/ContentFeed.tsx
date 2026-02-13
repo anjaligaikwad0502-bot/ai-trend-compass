@@ -5,6 +5,7 @@ import { contentApi, ContentItem, SemanticSearchResult } from '@/lib/api/content
 import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ContentFeedProps {
   activeFilter: string;
@@ -20,6 +21,24 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
   const [error, setError] = useState<string | null>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Load saved items from database
+  useEffect(() => {
+    const loadSavedItems = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('saved_items')
+        .select('content_id')
+        .eq('user_id', user.id);
+
+      if (!error && data) {
+        setSavedItems(new Set(data.map(item => item.content_id)));
+      }
+    };
+    loadSavedItems();
+  }, []);
 
   // Fetch content based on filter
   useEffect(() => {
@@ -115,7 +134,24 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
     return items;
   }, [content, searchResult, debouncedSearchQuery, activeFilter, savedItems]);
 
-  const toggleSave = useCallback((id: string) => {
+  const toggleSave = useCallback(async (id: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const isSaved = savedItems.has(id);
+
+    if (isSaved) {
+      await supabase
+        .from('saved_items')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('content_id', id);
+    } else {
+      await supabase
+        .from('saved_items')
+        .insert({ user_id: user.id, content_id: id });
+    }
+
     setSavedItems(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -125,7 +161,7 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
       }
       return next;
     });
-  }, []);
+  }, [savedItems]);
 
   if (activeFilter === 'analytics') {
     return null;
