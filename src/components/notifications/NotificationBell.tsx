@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Trash2, FileText, GitBranch, BookOpen, Video } from 'lucide-react';
+import { Bell, Check, Trash2, FileText, GitBranch, BookOpen, Video, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -20,11 +20,12 @@ interface NotificationBellProps {
   onClearAll: () => void;
 }
 
-const contentTypeIcons = {
+const contentTypeIcons: Record<string, any> = {
   article: FileText,
   repo: GitBranch,
   paper: BookOpen,
   video: Video,
+  tool: Wrench,
 };
 
 const typeColors = {
