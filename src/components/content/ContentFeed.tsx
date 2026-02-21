@@ -6,6 +6,8 @@ import { Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/integrations/supabase/client';
+import { ResearchMindPanel } from '@/components/research/ResearchMindPanel';
+import { useResearchMind } from '@/hooks/useResearchMind';
 
 interface ContentFeedProps {
   activeFilter: string;
@@ -19,6 +21,8 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const researchMind = useResearchMind();
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -163,6 +167,10 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
     });
   }, [savedItems]);
 
+  const handleAnalyze = useCallback((item: ContentItem) => {
+    researchMind.analyze(item, content);
+  }, [researchMind.analyze, content]);
+
   if (activeFilter === 'analytics') {
     return null;
   }
@@ -260,6 +268,7 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
                 index={index}
                 isSaved={savedItems.has(item.id)}
                 onToggleSave={toggleSave}
+                onAnalyze={handleAnalyze}
               />
             ))}
           </motion.div>
@@ -281,6 +290,16 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ResearchMind Panel */}
+      <ResearchMindPanel
+        isOpen={researchMind.isOpen}
+        onClose={researchMind.close}
+        paperTitle={researchMind.activePaper?.title || ''}
+        analysis={researchMind.analysis}
+        stage={researchMind.stage}
+        error={researchMind.error}
+      />
     </div>
   );
 }
