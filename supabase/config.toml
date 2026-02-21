@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.fetch-tools]
 verify_jwt = false
+
+[functions.research-mind]
+verify_jwt = false
