@@ -1,29 +1,20 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Brain, Shield, AlertTriangle, Search, Lightbulb,
-  CheckCircle2, XCircle, HelpCircle, ChevronDown, ChevronUp,
-  Loader2, Zap, FileWarning, Scale
+  X, Brain, Zap, CheckCircle2, XCircle, HelpCircle,
+  ChevronDown, ChevronUp, AlertTriangle, Scale, Search, FileWarning
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-
-export interface ResearchAnalysis {
-  claims: { text: string; type: string; strength: string }[];
-  supporting_papers: { title: string; relation: string }[];
-  conflicting_papers: { title: string; contradiction: string }[];
-  contradictions: { description: string; severity: string }[];
-  evidence_gaps: string[];
-  devils_advocate: { challenge: string; target_claim: string }[];
-  confidence_score: number;
-  confidence_explanation: string;
-  reasoning_summary: string;
-}
-
-export type PipelineStage = 'idle' | 'searching' | 'extracting' | 'comparing' | 'reasoning' | 'report' | 'done' | 'error';
+import type { ResearchAnalysis, PipelineStage, YouTubeResult } from './types';
+import { PipelineProgress } from './PipelineProgress';
+import { ConfidencePanel } from './ConfidencePanel';
+import { ConfidenceExplanation } from './ConfidenceExplanation';
+import { RankedPapers } from './RankedPapers';
+import { YouTubeExplanation } from './YouTubeExplanation';
+import { ReportDownload } from './ReportDownload';
 
 interface ResearchMindPanelProps {
   isOpen: boolean;
@@ -32,16 +23,9 @@ interface ResearchMindPanelProps {
   analysis: ResearchAnalysis | null;
   stage: PipelineStage;
   error?: string | null;
+  youtubeVideo: YouTubeResult | null;
+  youtubeLoading: boolean;
 }
-
-const stageConfig: Record<string, { label: string; icon: typeof Search; progress: number }> = {
-  searching: { label: 'Searching related papers…', icon: Search, progress: 20 },
-  extracting: { label: 'Extracting claims…', icon: Zap, progress: 40 },
-  comparing: { label: 'Cross-paper comparison…', icon: Scale, progress: 60 },
-  reasoning: { label: 'Autonomous reasoning…', icon: Brain, progress: 80 },
-  report: { label: 'Generating report…', icon: Lightbulb, progress: 95 },
-  done: { label: 'Analysis complete', icon: CheckCircle2, progress: 100 },
-};
 
 const strengthColor: Record<string, string> = {
   strong: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
@@ -55,19 +39,19 @@ const severityColor: Record<string, string> = {
   low: 'text-muted-foreground',
 };
 
-export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage, error }: ResearchMindPanelProps) {
-  const [expandedSection, setExpandedSection] = useState<string | null>('claims');
-
+export function ResearchMindPanel({
+  isOpen, onClose, paperTitle, analysis, stage, error,
+  youtubeVideo, youtubeLoading
+}: ResearchMindPanelProps) {
+  const [expandedSection, setExpandedSection] = useState<string | null>('ranked');
   const toggle = (section: string) => setExpandedSection(prev => prev === section ? null : section);
 
   const isLoading = stage !== 'idle' && stage !== 'done' && stage !== 'error';
-  const currentStage = stageConfig[stage];
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -76,7 +60,6 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
             onClick={onClose}
           />
 
-          {/* Panel */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -101,28 +84,7 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
             </div>
 
             {/* Pipeline Progress */}
-            {isLoading && currentStage && (
-              <div className="px-4 py-3 border-b border-border/50 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <span className="text-muted-foreground">{currentStage.label}</span>
-                </div>
-                <Progress value={currentStage.progress} className="h-1.5" />
-                <div className="flex gap-1">
-                  {Object.keys(stageConfig).filter(s => s !== 'done').map(s => (
-                    <div
-                      key={s}
-                      className={cn(
-                        'h-1 flex-1 rounded-full transition-colors',
-                        Object.keys(stageConfig).indexOf(s) <= Object.keys(stageConfig).indexOf(stage)
-                          ? 'bg-primary'
-                          : 'bg-muted'
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            {isLoading && <PipelineProgress stage={stage} />}
 
             {/* Error */}
             {stage === 'error' && (
@@ -138,33 +100,28 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
             {/* Results */}
             {analysis && stage === 'done' && (
               <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3">
-                  {/* Confidence Score */}
-                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary" />
-                        Confidence Score
-                      </span>
-                      <span className={cn(
-                        'text-2xl font-bold',
-                        analysis.confidence_score >= 0.7 ? 'text-emerald-500' :
-                        analysis.confidence_score >= 0.4 ? 'text-amber-500' : 'text-rose-500'
-                      )}>
-                        {Math.round(analysis.confidence_score * 100)}%
-                      </span>
-                    </div>
-                    <Progress
-                      value={analysis.confidence_score * 100}
-                      className="h-2"
-                    />
-                    <p className="text-xs text-muted-foreground">{analysis.confidence_explanation}</p>
-                  </div>
+                <div className="p-4 space-y-4">
+                  {/* Confidence Panel */}
+                  <ConfidencePanel analysis={analysis} />
+
+                  {/* Confidence Explanation */}
+                  <ConfidenceExplanation signals={analysis.confidence_signals} />
 
                   {/* Summary */}
                   <div className="p-3 rounded-xl bg-secondary/30 text-sm text-muted-foreground">
                     {analysis.reasoning_summary}
                   </div>
+
+                  {/* Top Ranked Papers */}
+                  <CollapsibleSection
+                    title="Top 5 Ranked Papers"
+                    icon={Search}
+                    count={analysis.ranked_papers?.length || 0}
+                    isOpen={expandedSection === 'ranked'}
+                    onToggle={() => toggle('ranked')}
+                  >
+                    <RankedPapers papers={analysis.ranked_papers} />
+                  </CollapsibleSection>
 
                   {/* Claims */}
                   <CollapsibleSection
@@ -189,10 +146,10 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
                     </div>
                   </CollapsibleSection>
 
-                  {/* Supporting Papers */}
+                  {/* Agreements (Supporting Papers) */}
                   {analysis.supporting_papers.length > 0 && (
                     <CollapsibleSection
-                      title="Supporting Papers"
+                      title="Agreements"
                       icon={CheckCircle2}
                       count={analysis.supporting_papers.length}
                       isOpen={expandedSection === 'supporting'}
@@ -209,43 +166,51 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
                     </CollapsibleSection>
                   )}
 
-                  {/* Conflicting Papers */}
-                  {analysis.conflicting_papers.length > 0 && (
+                  {/* Contradictions */}
+                  {(analysis.conflicting_papers.length > 0 || analysis.contradictions.length > 0) && (
                     <CollapsibleSection
-                      title="Conflicting Papers"
+                      title="Contradictions"
                       icon={XCircle}
-                      count={analysis.conflicting_papers.length}
-                      isOpen={expandedSection === 'conflicting'}
-                      onToggle={() => toggle('conflicting')}
+                      count={analysis.conflicting_papers.length + analysis.contradictions.length}
+                      isOpen={expandedSection === 'contradictions'}
+                      onToggle={() => toggle('contradictions')}
                     >
                       <div className="space-y-2">
                         {analysis.conflicting_papers.map((p, i) => (
-                          <div key={i} className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
+                          <div key={`cp-${i}`} className="p-3 rounded-lg bg-rose-500/5 border border-rose-500/10">
                             <p className="text-sm font-medium">{p.title}</p>
                             <p className="text-xs text-muted-foreground mt-1">{p.contradiction}</p>
+                          </div>
+                        ))}
+                        {analysis.contradictions.map((c, i) => (
+                          <div key={`ct-${i}`} className="p-3 rounded-lg bg-secondary/20 flex items-start gap-2">
+                            <AlertTriangle className={cn('w-4 h-4 mt-0.5 shrink-0', severityColor[c.severity])} />
+                            <div>
+                              <p className="text-sm">{c.description}</p>
+                              <Badge variant="outline" className="text-[10px] mt-1">{c.severity} severity</Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </CollapsibleSection>
                   )}
 
-                  {/* Contradictions */}
-                  {analysis.contradictions.length > 0 && (
+                  {/* Devil's Advocate */}
+                  {analysis.devils_advocate.length > 0 && (
                     <CollapsibleSection
-                      title="Contradiction Highlights"
-                      icon={AlertTriangle}
-                      count={analysis.contradictions.length}
-                      isOpen={expandedSection === 'contradictions'}
-                      onToggle={() => toggle('contradictions')}
+                      title="Devil's Advocate Review"
+                      icon={Scale}
+                      count={analysis.devils_advocate.length}
+                      isOpen={expandedSection === 'devils'}
+                      onToggle={() => toggle('devils')}
                     >
                       <div className="space-y-2">
-                        {analysis.contradictions.map((c, i) => (
-                          <div key={i} className="p-3 rounded-lg bg-secondary/20 flex items-start gap-2">
-                            <AlertTriangle className={cn('w-4 h-4 mt-0.5 shrink-0', severityColor[c.severity])} />
-                            <div>
-                              <p className="text-sm">{c.description}</p>
-                              <Badge variant="outline" className="text-[10px] mt-1">{c.severity} severity</Badge>
-                            </div>
+                        {analysis.devils_advocate.map((d, i) => (
+                          <div key={i} className="p-3 rounded-lg bg-secondary/20 space-y-1">
+                            <p className="text-sm font-medium">{d.challenge}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Re: <span className="italic">{d.target_claim}</span>
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -272,27 +237,15 @@ export function ResearchMindPanel({ isOpen, onClose, paperTitle, analysis, stage
                     </CollapsibleSection>
                   )}
 
-                  {/* Devil's Advocate */}
-                  {analysis.devils_advocate.length > 0 && (
-                    <CollapsibleSection
-                      title="Devil's Advocate"
-                      icon={Scale}
-                      count={analysis.devils_advocate.length}
-                      isOpen={expandedSection === 'devils'}
-                      onToggle={() => toggle('devils')}
-                    >
-                      <div className="space-y-2">
-                        {analysis.devils_advocate.map((d, i) => (
-                          <div key={i} className="p-3 rounded-lg bg-secondary/20 space-y-1">
-                            <p className="text-sm font-medium">{d.challenge}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Re: <span className="italic">{d.target_claim}</span>
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleSection>
-                  )}
+                  {/* YouTube Explanation */}
+                  <YouTubeExplanation video={youtubeVideo} isLoading={youtubeLoading} />
+
+                  {/* Download Report */}
+                  <ReportDownload
+                    paperTitle={paperTitle}
+                    analysis={analysis}
+                    video={youtubeVideo}
+                  />
                 </div>
               </ScrollArea>
             )}

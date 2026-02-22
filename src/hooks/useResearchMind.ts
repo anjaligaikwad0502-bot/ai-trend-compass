@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentItem } from '@/lib/api/content';
-import type { ResearchAnalysis, PipelineStage } from '@/components/research/ResearchMindPanel';
+import type { ResearchAnalysis, PipelineStage, YouTubeResult } from '@/components/research/types';
 
 export function useResearchMind() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,17 +9,38 @@ export function useResearchMind() {
   const [analysis, setAnalysis] = useState<ResearchAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activePaper, setActivePaper] = useState<ContentItem | null>(null);
+  const [youtubeVideo, setYoutubeVideo] = useState<YouTubeResult | null>(null);
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
+
+  const fetchYouTubeVideo = useCallback(async (title: string) => {
+    setYoutubeLoading(true);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('youtube-research', {
+        body: { query: title },
+      });
+      if (!fnError && data?.data) {
+        setYoutubeVideo(data.data);
+      }
+    } catch (err) {
+      console.error('YouTube fetch error:', err);
+    } finally {
+      setYoutubeLoading(false);
+    }
+  }, []);
 
   const analyze = useCallback(async (paper: ContentItem, allContent: ContentItem[]) => {
     setActivePaper(paper);
     setIsOpen(true);
     setAnalysis(null);
     setError(null);
+    setYoutubeVideo(null);
 
-    // Simulate pipeline stages for UX
-    const stages: PipelineStage[] = ['searching', 'extracting', 'comparing', 'reasoning', 'report'];
+    // 7 pipeline stages
+    const stages: PipelineStage[] = [
+      'searching', 'ranking', 'extracting', 'contradictions',
+      'devils_advocate', 'confidence', 'report'
+    ];
 
-    // Find related papers (same tags or content_type)
     const relatedPapers = allContent
       .filter(item =>
         item.id !== paper.id &&
@@ -27,7 +48,6 @@ export function useResearchMind() {
       )
       .slice(0, 8);
 
-    // Progress through stages with delays
     let currentStageIndex = 0;
     const advanceStage = () => {
       if (currentStageIndex < stages.length) {
@@ -36,10 +56,13 @@ export function useResearchMind() {
       }
     };
 
-    advanceStage(); // searching
-    const stageInterval = setInterval(advanceStage, 2500);
+    advanceStage();
+    const stageInterval = setInterval(advanceStage, 2000);
 
     try {
+      // Start YouTube search in parallel
+      fetchYouTubeVideo(paper.title);
+
       const { data, error: fnError } = await supabase.functions.invoke('research-mind', {
         body: {
           paper: {
@@ -50,6 +73,8 @@ export function useResearchMind() {
             author: paper.author,
             source: paper.source,
             arxiv_id: paper.arxiv_id,
+            published_at: paper.published_at,
+            url: paper.url,
           },
           relatedPapers: relatedPapers.map(p => ({
             id: p.id,
@@ -58,6 +83,8 @@ export function useResearchMind() {
             tags: p.tags,
             author: p.author,
             source: p.source,
+            published_at: p.published_at,
+            url: p.url,
           })),
         },
       });
@@ -83,18 +110,22 @@ export function useResearchMind() {
       setStage('error');
       setError(err instanceof Error ? err.message : 'Unexpected error');
     }
-  }, []);
+  }, [fetchYouTubeVideo]);
 
   const close = useCallback(() => {
     setIsOpen(false);
-    // Reset after animation
     setTimeout(() => {
       setStage('idle');
       setAnalysis(null);
       setError(null);
       setActivePaper(null);
+      setYoutubeVideo(null);
     }, 300);
   }, []);
 
-  return { isOpen, stage, analysis, error, activePaper, analyze, close };
+  return {
+    isOpen, stage, analysis, error, activePaper,
+    youtubeVideo, youtubeLoading,
+    analyze, close,
+  };
 }

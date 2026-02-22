@@ -11,6 +11,8 @@ interface PaperInput {
   author: string;
   source: string;
   arxiv_id?: string;
+  published_at?: string;
+  url?: string;
 }
 
 Deno.serve(async (req) => {
@@ -39,15 +41,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build context from related papers
     const relatedContext = (relatedPapers || []).slice(0, 8).map((p, i) =>
-      `[Paper ${i + 1}] "${p.title}" by ${p.author}\nSummary: ${p.summary}\nTags: ${p.tags.join(', ')}`
+      `[Paper ${i + 1}] "${p.title}" by ${p.author} (Published: ${p.published_at || 'unknown'})\nSource: ${p.source}\nSummary: ${p.summary}\nTags: ${p.tags.join(', ')}`
     ).join('\n\n');
 
-    const systemPrompt = `You are ResearchMind, an autonomous academic reasoning engine. Analyze the given research paper by extracting claims, finding contradictions with related work, identifying evidence gaps, and providing devil's advocate challenges.
+    const systemPrompt = `You are ResearchMind, an autonomous academic reasoning engine. Analyze the given research paper by:
+1. Ranking the most relevant related papers (Top 5)
+2. Extracting structured key claims
+3. Comparing cross-paper claims for agreements & contradictions
+4. Running devil's advocate reasoning (weak evidence, missing validation, logical gaps)
+5. Computing a weighted confidence score based on recency, relevance, and agreement
 
 You MUST respond with a valid JSON object matching this exact schema (no markdown, no code fences):
 {
+  "ranked_papers": [
+    { "title": "string", "author": "string", "relevance_score": 0.0-1.0, "url": "string or null", "published_at": "string or null" }
+  ],
   "claims": [
     { "text": "string", "type": "hypothesis|finding|methodology|conclusion", "strength": "strong|moderate|weak" }
   ],
@@ -60,29 +69,51 @@ You MUST respond with a valid JSON object matching this exact schema (no markdow
   "contradictions": [
     { "description": "string", "severity": "high|medium|low" }
   ],
-  "evidence_gaps": [
-    "string describing a gap"
-  ],
+  "evidence_gaps": ["string describing a gap"],
   "devils_advocate": [
     { "challenge": "string", "target_claim": "string" }
   ],
-  "confidence_score": 0.0 to 1.0,
+  "confidence_score": 0.0-1.0,
+  "confidence_breakdown": {
+    "recency": 0.0-1.0,
+    "relevance": 0.0-1.0,
+    "agreement": 0.0-1.0
+  },
   "confidence_explanation": "string explaining the score",
+  "confidence_signals": {
+    "positive": ["string - strong agreement across papers", "recent publications", etc.],
+    "negative": ["string - contradictory claims", "weak evidence", etc.],
+    "neutral": ["string - emerging research", "mixed interpretations", etc.]
+  },
   "reasoning_summary": "string with overall assessment"
-}`;
+}
+
+For confidence_breakdown:
+- recency: How recent are the supporting papers? (1.0 = very recent, 0.0 = outdated)
+- relevance: How directly relevant are the related papers? (1.0 = highly relevant)
+- agreement: How much do papers agree? (1.0 = strong consensus, 0.0 = heavy contradiction)
+
+For confidence_signals, categorize your reasoning:
+- positive: Factors that increase confidence (strong agreement, recent data, consistent findings, robust methodology)
+- negative: Factors that decrease confidence (contradictions, weak evidence, limited validation, small samples)
+- neutral: Context factors (emerging field, mixed interpretations, context-dependent conclusions)
+
+Always provide at least 2 items in each signal category.`;
 
     const userPrompt = `Analyze this paper and cross-reference with related work:
 
 ## Target Paper
 Title: ${paper.title}
 Author: ${paper.author}
+Published: ${paper.published_at || 'unknown'}
 Summary: ${paper.summary}
 Tags: ${paper.tags.join(', ')}
+Source: ${paper.source}
 
 ## Related Papers for Cross-Reference
 ${relatedContext || 'No related papers available for comparison.'}
 
-Perform deep analysis: extract key claims, identify supporting/conflicting papers from the related set, detect contradictions, find evidence gaps, generate devil's advocate challenges, and compute a confidence score. Return ONLY valid JSON.`;
+Perform deep analysis: rank the top 5 most relevant papers, extract key claims, identify supporting/conflicting papers, detect contradictions, find evidence gaps, generate devil's advocate challenges, and compute a confidence score with breakdown. Return ONLY valid JSON.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -124,7 +155,6 @@ Perform deep analysis: extract key claims, identify supporting/conflicting paper
     const aiData = await response.json();
     const rawContent = aiData.choices?.[0]?.message?.content || '';
 
-    // Parse JSON from response (strip markdown fences if present)
     let analysis;
     try {
       const jsonStr = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
@@ -136,6 +166,11 @@ Perform deep analysis: extract key claims, identify supporting/conflicting paper
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Ensure defaults for new fields
+    analysis.ranked_papers = analysis.ranked_papers || [];
+    analysis.confidence_breakdown = analysis.confidence_breakdown || { recency: 0.5, relevance: 0.5, agreement: 0.5 };
+    analysis.confidence_signals = analysis.confidence_signals || { positive: [], negative: [], neutral: [] };
 
     return new Response(
       JSON.stringify({ success: true, data: analysis }),
