@@ -299,6 +299,8 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
         analysis={researchMind.analysis}
         stage={researchMind.stage}
         error={researchMind.error}
+        youtubeVideo={researchMind.youtubeVideo}
+        youtubeLoading={researchMind.youtubeLoading}
       />
     </div>
   );
