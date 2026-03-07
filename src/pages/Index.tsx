@@ -8,9 +8,11 @@ import { ContentFeed } from '@/components/content/ContentFeed';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { AIAssistant } from '@/components/ai/AIAssistant';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ThemeProvider } from '@/lib/theme';
 import { supabase } from '@/integrations/supabase/client';
 import { contentApi } from '@/lib/api/content';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { User } from '@supabase/supabase-js';
 
 function AppContent() {
