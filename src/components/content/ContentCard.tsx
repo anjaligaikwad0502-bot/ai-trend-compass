@@ -12,8 +12,7 @@ import {
   GitFork,
   Clock,
   TrendingUp,
-  Sparkles,
-  Brain
+  Sparkles
 } from 'lucide-react';
 import { ContentItem } from '@/lib/api/content';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +24,6 @@ interface ContentCardProps {
   index: number;
   isSaved: boolean;
   onToggleSave: (id: string) => void;
-  onAnalyze?: (item: ContentItem) => void;
 }
 
 const typeIcons = {
@@ -50,7 +48,7 @@ const difficultyColors = {
   advanced: 'bg-rose-500/10 text-rose-500',
 };
 
-export function ContentCard({ item, index, isSaved, onToggleSave, onAnalyze }: ContentCardProps) {
+export function ContentCard({ item, index, isSaved, onToggleSave }: ContentCardProps) {
   const navigate = useNavigate();
   const TypeIcon = typeIcons[item.content_type];
 
@@ -156,23 +154,6 @@ export function ContentCard({ item, index, isSaved, onToggleSave, onAnalyze }: C
         </div>
       )}
 
-      {/* Analyze Button for papers */}
-      {item.content_type === 'paper' && onAnalyze && (
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAnalyze(item);
-            }}
-          >
-            <Brain className="w-4 h-4" />
-            Analyze with ResearchMind
-          </Button>
-        </div>
-      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-border/50">
