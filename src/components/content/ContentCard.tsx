@@ -24,7 +24,6 @@ interface ContentCardProps {
   index: number;
   isSaved: boolean;
   onToggleSave: (id: string) => void;
-  onAnalyze?: (item: ContentItem) => void;
 }
 
 const typeIcons = {
