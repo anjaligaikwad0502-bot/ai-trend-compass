@@ -12,11 +12,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { Notification } from '@/hooks/useNotifications';
 
 interface HeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   user?: SupabaseUser | null;
+  notifications: Notification[];
+  unreadCount: number;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onClearAll: () => void;
 }
 
 export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
