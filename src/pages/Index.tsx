@@ -25,6 +25,17 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+  } = useNotifications({
+    enabled: true,
+    pollInterval: 60000,
+    userInterests: [],
+  });
   const [platformContext, setPlatformContext] = useState<{
     contentSummary: string;
     trendingTags: string[];
