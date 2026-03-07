@@ -26,7 +26,7 @@ interface HeaderProps {
   onClearAll: () => void;
 }
 
-export function Header({ searchQuery, setSearchQuery, user }: HeaderProps) {
+export function Header({ searchQuery, setSearchQuery, user, notifications, unreadCount, onMarkAsRead, onMarkAllAsRead, onClearAll }: HeaderProps) {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast.success('Signed out successfully');
