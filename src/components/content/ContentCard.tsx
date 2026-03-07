@@ -48,7 +48,7 @@ const difficultyColors = {
   advanced: 'bg-rose-500/10 text-rose-500',
 };
 
-export function ContentCard({ item, index, isSaved, onToggleSave, onAnalyze }: ContentCardProps) {
+export function ContentCard({ item, index, isSaved, onToggleSave }: ContentCardProps) {
   const navigate = useNavigate();
   const TypeIcon = typeIcons[item.content_type];
 
