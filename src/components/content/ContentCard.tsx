@@ -12,8 +12,7 @@ import {
   GitFork,
   Clock,
   TrendingUp,
-  Sparkles,
-  Brain
+  Sparkles
 } from 'lucide-react';
 import { ContentItem } from '@/lib/api/content';
 import { Badge } from '@/components/ui/badge';
