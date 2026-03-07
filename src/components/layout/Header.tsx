@@ -72,6 +72,13 @@ export function Header({ searchQuery, setSearchQuery, user, notifications, unrea
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={onMarkAsRead}
+            onMarkAllAsRead={onMarkAllAsRead}
+            onClearAll={onClearAll}
+          />
           <ThemeToggle />
           
           {user ? (

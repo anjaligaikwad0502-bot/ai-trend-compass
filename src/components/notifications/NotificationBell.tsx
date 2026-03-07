@@ -141,6 +141,5 @@ export function NotificationBell({
         </ScrollArea>
       </PopoverContent>
     </Popover>
-    </div>
   );
 }
