@@ -31,6 +31,7 @@ const extras = [
   { id: 'saved', label: 'Saved', icon: Bookmark },
   { id: 'trending', label: 'Trending', icon: TrendingUp },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'conflict-analyzer', label: 'Conflict Analyzer', icon: Swords },
 ];
 
 export function Sidebar({ activeFilter, setActiveFilter }: SidebarProps) {

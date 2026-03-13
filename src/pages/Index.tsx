@@ -126,6 +126,8 @@ function AppContent() {
               
               {activeFilter === 'analytics' ? (
                 <AnalyticsDashboard />
+              ) : activeFilter === 'conflict-analyzer' ? (
+                <ConflictAnalyzer onSelectMode={(mode) => console.log('Selected mode:', mode)} />
               ) : (
                 <ContentFeed activeFilter={activeFilter} searchQuery={searchQuery} />
               )}
