@@ -126,6 +126,8 @@ function AppContent() {
               
               {activeFilter === 'analytics' ? (
                 <AnalyticsDashboard />
+              ) : activeFilter === 'conflict-analyzer' ? (
+                <ConflictAnalyzer />
               ) : (
                 <ContentFeed activeFilter={activeFilter} searchQuery={searchQuery} />
               )}
