@@ -4,6 +4,7 @@ import { Search, FileStack, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TopicAnalyzer } from './TopicAnalyzer';
+import { PaperAnalyzer } from './PaperAnalyzer';
 
 export function ConflictAnalyzer() {
   const [selectedMode, setSelectedMode] = useState<'topic' | 'paper' | null>(null);
