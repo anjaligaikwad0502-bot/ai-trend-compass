@@ -31,6 +31,10 @@ export function ConflictAnalyzer() {
     return <TopicAnalyzer onBack={() => setActiveView('select')} />;
   }
 
+  if (activeView === 'paper') {
+    return <PaperAnalyzer onBack={() => setActiveView('select')} />;
+  }
+
   return (
     <div className="space-y-6">
       <motion.div
