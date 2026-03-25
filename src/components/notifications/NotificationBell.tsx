@@ -21,13 +21,6 @@ interface NotificationBellProps {
   onClearAll: () => void;
 }
 
-const contentTypeIcons: Record<string, any> = {
-  article: FileText,
-  repo: GitBranch,
-  paper: BookOpen,
-  video: Video,
-  tool: Wrench,
-};
 
 const typeIcons: Record<string, any> = {
   new_content: Bell,

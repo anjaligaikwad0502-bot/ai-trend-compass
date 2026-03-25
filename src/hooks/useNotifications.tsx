@@ -26,12 +26,6 @@ interface UseNotificationsOptions {
   minImportanceScore?: number;
 }
 
-const PRIORITY_COLORS = {
-  critical: 'destructive' as const,
-  high: 'default' as const,
-  medium: 'default' as const,
-  low: 'default' as const,
-};
 
 export function useNotifications(options: UseNotificationsOptions = {}) {
   const {
