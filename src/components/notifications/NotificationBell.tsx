@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, Trash2, FileText, GitBranch, BookOpen, Video, Wrench, Shield, TrendingUp, Target, Zap, Lightbulb } from 'lucide-react';
+import { Bell, Check, Trash2, Shield, TrendingUp, Target, Zap, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -194,7 +194,7 @@ export function NotificationBell({
         {/* Footer with agent status */}
         {notifications.length > 0 && (
           <div className="border-t px-4 py-2 flex items-center justify-center gap-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] text-muted-foreground">
               Notification Agent active — filtering low-value alerts
             </span>
