@@ -54,9 +54,19 @@ export function ContentFeed({ activeFilter, searchQuery }: ContentFeedProps) {
       try {
         let data: ContentItem[] = [];
         
-        if (activeFilter === 'all' || activeFilter === 'trending' || activeFilter.startsWith('domain-')) {
+        if (activeFilter === 'all' || activeFilter === 'trending' || activeFilter.startsWith('domain-') || activeFilter === 'saved') {
           data = await contentApi.fetchAllContent();
         } else if (activeFilter === 'article') {
+          data = await contentApi.fetchArticles();
+        } else if (activeFilter === 'repo') {
+          data = await contentApi.fetchRepos();
+        } else if (activeFilter === 'paper') {
+          data = await contentApi.fetchPapers();
+        } else if (activeFilter === 'video') {
+          data = await contentApi.fetchVideos();
+        } else if (activeFilter === 'tool') {
+          data = await contentApi.fetchTools();
+        }
         
         setContent(data);
       } catch (err) {
